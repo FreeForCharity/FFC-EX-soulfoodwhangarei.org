@@ -73,8 +73,13 @@ describe('not-found page (app/not-found.tsx)', () => {
   })
 
   it('exposes the configured contact email as a mailto link', () => {
-    render(<NotFound />)
+    const { container } = render(<NotFound />)
 
+    if (!siteConfig.contactEmail.trim()) {
+      // No email yet (pending): offer no mailto link rather than an empty one.
+      expect(container.querySelector('a[href^="mailto:"]')).toBeNull()
+      return
+    }
     expect(screen.getByRole('link', { name: siteConfig.contactEmail })).toHaveAttribute(
       'href',
       `mailto:${siteConfig.contactEmail}`
