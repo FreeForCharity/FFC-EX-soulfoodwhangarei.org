@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
-import { siteUrl } from '@/lib/site.config'
+import { siteConfig } from '@/lib/site.config'
+import ContactEmail from '@/components/policy/ContactEmail'
+import { pageMetadata } from '@/lib/pageMetadata'
 
-export const metadata: Metadata = {
-  title: 'Donation Policy | Free For Charity',
-  description: 'Donation Policy for Free For Charity website',
-  // Own canonical: without it Next inherits the layout's, which points at the home page.
-  alternates: { canonical: siteUrl('/donation-policy') },
-}
+export const metadata: Metadata = pageMetadata({
+  title: 'Donation Policy',
+  description: `Donation Policy for ${siteConfig.name}`,
+  path: '/donation-policy',
+})
 
 export default function DonationPolicy() {
   return (
@@ -24,24 +25,34 @@ export default function DonationPolicy() {
           <h2 className="font-[var(--font-faustina)] text-[32px] leading-[40px] mt-8 mb-4">
             Tax Deductibility
           </h2>
-          <p>
-            Free For Charity is a qualified 501(c)(3) nonprofit organization (EIN: 46-2471893).
-            Donations are tax-deductible to the full extent allowed by law.
-          </p>
+          {/* A legal claim, made only when siteConfig.taxStatusLabel says the
+              organization holds IRS 501(c)(3) recognition. */}
+          {siteConfig.taxStatusLabel.trim() ? (
+            <p>
+              {siteConfig.name} is a qualified 501(c)(3) nonprofit organization{' '}
+              {`(EIN: ${siteConfig.ein}).`} Donations are tax-deductible to the full extent allowed
+              by law.
+            </p>
+          ) : (
+            // No recognition is claimed, and none is denied either: the site
+            // simply makes no 501(c)(3) statement. The EIN is named only when
+            // one is configured (a foreign organization has none, and a pending
+            // one is still empty).
+            <p>
+              This site does not state IRS 501(c)(3) recognition for {siteConfig.name}
+              {siteConfig.ein.trim() ? ` (EIN: ${siteConfig.ein.trim()})` : ''}, so donations may
+              not be tax-deductible in the United States. Please consult a tax advisor before
+              claiming a deduction.
+            </p>
+          )}
 
           <h2 className="font-[var(--font-faustina)] text-[32px] leading-[40px] mt-8 mb-4">
             Use of Donations
           </h2>
           <p>
-            Donations support our mission to reduce costs and increase revenues for nonprofits by
-            providing:
+            Donations support {siteConfig.name}&apos;s mission and the administrative costs
+            necessary to carry it out: {siteConfig.mission}
           </p>
-          <ul>
-            <li>Free domain registration and hosting services</li>
-            <li>Technology consultation and support</li>
-            <li>Volunteer coordination and training</li>
-            <li>Administrative costs necessary to operate our programs</li>
-          </ul>
 
           <h2 className="font-[var(--font-faustina)] text-[32px] leading-[40px] mt-8 mb-4">
             Donation Processing
@@ -72,15 +83,14 @@ export default function DonationPolicy() {
           </h2>
           <p>For questions about donations or this policy, please contact us at:</p>
           <p>
-            Email:{' '}
-            <a
-              href="mailto:clarkemoyer@freeforcharity.org"
-              className="text-primary hover:underline"
-            >
-              clarkemoyer@freeforcharity.org
-            </a>
-            <br />
-            Phone: (520) 222-8104
+            Email: <ContactEmail className="text-primary underline" />
+            {/* Only a configured number is shown, matching the footer's phone guard. */}
+            {siteConfig.phone.tel.trim() && siteConfig.phone.display.trim() && (
+              <>
+                <br />
+                Phone: {siteConfig.phone.display}
+              </>
+            )}
           </p>
         </div>
       </div>

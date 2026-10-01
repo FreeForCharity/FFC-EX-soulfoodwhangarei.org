@@ -1,7 +1,9 @@
 import React from 'react'
+import { PENDING_TEXT, isPending, siteConfig } from '../../src/lib/site.config'
 import { render, screen } from '@testing-library/react'
 
 import TheFreeForCharityTeam from '../../src/components/home-page/TheFreeForCharityTeam'
+import { team } from '../../src/data/team'
 
 describe('TheFreeForCharityTeam component', () => {
   it('should render without crashing', () => {
@@ -10,35 +12,24 @@ describe('TheFreeForCharityTeam component', () => {
 
   it('should display the team heading', () => {
     render(<TheFreeForCharityTeam />)
-    expect(screen.getByText('The Free For Charity Team')).toBeInTheDocument()
+    expect(screen.getByText(`The ${siteConfig.name} Team`)).toBeInTheDocument()
   })
 
   it('should render a card per member with initials monograms and no photos', () => {
     const { container } = render(<TheFreeForCharityTeam />)
-    // Sample team ships five members; each card exposes its name as a heading.
-    const names = screen.getAllByRole('heading', { level: 3 })
-    expect(names).toHaveLength(5)
+    // One heading per configured member -- the roster size is per-charity
+    // content, so it is read from the data rather than pinned to a number.
+    const names = screen.queryAllByRole('heading', { level: 3 })
+    expect(names).toHaveLength(team.length)
     // No portrait images anywhere in the team section.
     expect(container.querySelectorAll('img')).toHaveLength(0)
   })
 
-  it('should display Clarke Moyer as Founder', () => {
+  it('should display every configured member with their role', () => {
     render(<TheFreeForCharityTeam />)
-    expect(screen.getByText('Clarke Moyer')).toBeInTheDocument()
-    expect(screen.getByText('Free For Charity Founder/ President of the Board')).toBeInTheDocument()
-  })
-
-  it('should display all team member names', () => {
-    render(<TheFreeForCharityTeam />)
-    const expectedNames = [
-      'Clarke Moyer',
-      'Chris Rae',
-      'Tyler Carlotto',
-      'Brennan Darling',
-      'Rebecca Cook',
-    ]
-    for (const name of expectedNames) {
-      expect(screen.getByText(name)).toBeInTheDocument()
+    for (const member of team) {
+      expect(screen.getByText(member.name)).toBeInTheDocument()
+      expect(screen.getByText(member.role)).toBeInTheDocument()
     }
   })
 
@@ -56,9 +47,37 @@ describe('TheFreeForCharityTeam with an empty roster', () => {
   it('renders nothing when the team array is empty', () => {
     jest.isolateModules(() => {
       jest.doMock('@/data/team', () => ({ team: [] }))
+      // An empty roster that is NOT pending means "no team to show".
+      require('../../src/lib/site.config').siteConfig.pending = []
       const EmptyTeam = require('../../src/components/home-page/TheFreeForCharityTeam').default
       const { container } = render(<EmptyTeam />)
       expect(container.firstChild).toBeNull()
     })
+  })
+
+  // A team the charity has not supplied yet (listed in siteConfig.pending) is
+  // shown as a visible, non-link "awaiting information" placeholder instead of
+  // silently disappearing.
+  it('renders the section with a placeholder when the team is pending', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/data/team', () => ({ team: [] }))
+      // Same module instance the component imports inside this isolated registry.
+      const config = require('../../src/lib/site.config')
+      config.siteConfig.pending = ['team']
+      const PendingTeam = require('../../src/components/home-page/TheFreeForCharityTeam').default
+      const { container } = render(<PendingTeam />)
+
+      expect(container.querySelector('#team')).toBeInTheDocument()
+      expect(screen.getByText(`The ${config.siteConfig.name} Team`)).toBeInTheDocument()
+      expect(screen.getByText(config.PENDING_TEXT).closest('a')).toBeNull()
+      expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+    })
+  })
+})
+
+describe('TheFreeForCharityTeam with the shipped config', () => {
+  it('shows the placeholder only while an empty team is pending', () => {
+    render(<TheFreeForCharityTeam />)
+    expect(Boolean(screen.queryByText(PENDING_TEXT))).toBe(isPending('team') && team.length === 0)
   })
 })

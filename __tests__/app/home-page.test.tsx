@@ -21,6 +21,8 @@ jest.mock('../../src/components/ui/TeamMemberCard', () => {
 })
 
 import HomePage from '../../src/app/home-page'
+import { team } from '../../src/data/team'
+import { PENDING_TEXT } from '../../src/lib/site.config'
 
 describe('HomePage (app/home-page)', () => {
   it('should render without crashing', () => {
@@ -29,6 +31,9 @@ describe('HomePage (app/home-page)', () => {
 
   it('should render TheFreeForCharityTeam component', () => {
     render(<HomePage />)
-    expect(screen.getAllByTestId('team-member-card').length).toBeGreaterThan(0)
+    // One card per configured member; a roster still awaited from the charity
+    // shows the team section with the placeholder instead.
+    expect(screen.queryAllByTestId('team-member-card')).toHaveLength(team.length)
+    if (team.length === 0) expect(screen.getByText(PENDING_TEXT)).toBeInTheDocument()
   })
 })
